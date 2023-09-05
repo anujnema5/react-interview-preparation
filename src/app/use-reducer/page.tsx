@@ -1,97 +1,123 @@
 "use client";
+import React, { useReducer, useState } from 'react'
 
-import React, { useReducer } from 'react';
+type TAction =
+  { type: "ADD_ITEM", payload: TItem } |
+  { type: "REMOVE_ITEM", payload: TItem } |
+  { type: "CREATE_ITEM", payload: TItem }
 
-type CartItem = {
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
+type TItem = {
+  id: number,
+  name: string,
+  quantity: number,
+  price: number
 }
 
-type CartAction =
-  { type: 'ADD_ITEM'; payload: CartItem } |
-  { type: 'REMOVE_ITEM', payload: CartItem }
-
-type CartState = {
-  items: CartItem[],
+type TCart = {
+  items: TItem[],
   total: number
 }
 
-// Define the initial state for the shopping cart
-const initialState: CartState = {
-  items: [{ id: 123445, name: "Dove Conditioner", price: 34, quantity: 1 }],
-  total: 34,
-};
+const reducerFn = (state: TCart, action: TAction): TCart => {
 
-// Define the reducer function to handle actions
-const cartReducer = (state: CartState, action: CartAction):CartState => {
+  const existingItem = state.items.find((item) => action.payload.id === item.id);
   switch (action.type) {
-    case 'ADD_ITEM':
-      // Check if the item already exists in the cart
-      const existingItem = state.items.find(item => item.id === action.payload.id);
+    case "ADD_ITEM":
+
       if (existingItem) {
-        // If it exists, increase the quantity
         return {
-          items: state.items.map(item => 
-            item.id === action.payload.id ? { ...item, quantity: item.quantity + 1 } : item
-          ),
-          total: state.total + action.payload.price,
-        };
+          items: state.items.map((item) => {
+            return action.payload.id === item.id ? { ...item, quantity: Number(item.quantity) + 1 } : item
+          }),
+          total: state.total + action.payload.price
+        }
       } else {
-        // If it doesn't exist, add it to the cart
         return {
-          // ...state,
-          items: [...state.items, { ...action.payload, quantity: 1 }],
-          total: state.total + action.payload.price,
-        };
+          items: [...state.items, { ...action.payload }],
+          total: state.total + action.payload.price
+        }
       }
 
     case 'REMOVE_ITEM':
-      // Find the item to remove
-      const itemToRemove = state.items.find(item => item.id === action.payload.id);
-      if (itemToRemove) {
-        // If the item has a quantity greater than 1, decrease the quantity
-        if (itemToRemove.quantity > 1) {
+      if (existingItem) {
+        if (existingItem.quantity > 1) {
           return {
-            ...state,
-            items: state.items.map(item =>
-              item.id === action.payload.id
-                ? { ...item, quantity: item.quantity - 1 }
-                : item
-            ),
-            total: state.total - action.payload.price,
-          };
+            items: state.items.map((item) => {
+              return item.id === action.payload.id ? { ...item, quantity: item.quantity - 1 } : item
+            }),
+            total: state.total - action.payload.price
+          }
         } else {
-          // If the item has a quantity of 1, remove it from the cart
           return {
-            ...state,
-            items: state.items.filter(item => item.id !== action.payload.id),
-            total: state.total - action.payload.price,
-          };
+            items: state.items.filter((item) => {
+              return item.id !== action.payload.id
+            }),
+            total: state.total - action.payload.price
+          }
+        }
+      } else {
+        throw new Error("Something went wrong, Item does not exist")
+      }
+
+    case 'CREATE_ITEM':
+      if (existingItem) {
+        throw new Error("Item already exist increase or Decrease the quantity")
+      } else {
+        return {
+          items: [...state.items, {...action.payload}],
+          total: state.total + Number(action.payload.price)
         }
       }
-      return state;
 
     default:
-      return state;
+      return {
+        ...state
+      }
   }
-};
+}
 
-function ShoppingCart() {
-  // Use useReducer with the cartReducer and initial state
-  const [cart, dispatch] = useReducer(cartReducer, initialState);
+const initialState: TCart = {
+  items: [{ id: 128736, name: "Clinic Plus", price: 80, quantity: 1 }],
+  total: 80
+}
 
-  const addItemToCart = (item: CartItem) => {
-    dispatch({ type: 'ADD_ITEM', payload: item });
-  };
+function UseReducer() {
+  const [item, setItem] = useState({
+    id: Number(Date.now()),
+    name: "",
+    quantity: 0,
+    price: 0
+  });
 
-  const removeItemFromCart = (item: CartItem) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: item });
-  };
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target
+
+    setItem((prev) => {
+      return {
+        ...prev,
+        [name]: value,
+      };
+    });
+  }
+
+  const onSubmit = (e: any) => {
+    e.preventDefault();
+    dispatch({ type: 'CREATE_ITEM', payload: item })
+
+  }
+
+  const [cart, dispatch] = useReducer(reducerFn, initialState);
+
+  const addItemToCart = (item: TItem) => {
+    dispatch({ type: "ADD_ITEM", payload: item })
+  }
+
+  const removeItemFromCart = (item: TItem) => {
+    dispatch({ type: "REMOVE_ITEM", payload: item })
+  }
 
   return (
-    <div className=''>
+    <React.Fragment>
       <h1>Shopping Cart</h1>
       <ul className=''>
         {cart.items.map((item) => (
@@ -103,8 +129,20 @@ function ShoppingCart() {
         ))}
       </ul>
       <p>Total: ${cart.total}</p>
-    </div>
-  );
+
+      <form action="" className='flex gap-2 mt-3'>
+
+        <input type="text" value={item.name} placeholder='Enter Product Name' name="name" className='px-1 text-gray-800 rounded-sm' id="" onChange={handleChange} />
+
+        <input type="number" value={item.quantity} placeholder='Enter Quantity' name="quantity" id="" className='px-1 rounded-sm text-gray-800' onChange={handleChange} />
+
+        <input type="number" value={item.price} placeholder='Enter Price' name="price" id="" className='px-1 rounded-sm text-gray-800' onChange={handleChange} />
+
+        <button type="submit" className='bg-red-400 px-3 py-1 rounded-md' onClick={onSubmit}>Submit</button>
+      </form>
+    </React.Fragment>
+  )
 }
 
-export default ShoppingCart;
+
+export default UseReducer;
