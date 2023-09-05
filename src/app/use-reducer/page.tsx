@@ -20,9 +20,8 @@ type CartState = {
 
 // Define the initial state for the shopping cart
 const initialState: CartState = {
-  items: [
-    { id: 123445, name: "Dove Conditioner", price: 34, quantity: 2 }],
-  total: 0,
+  items: [{ id: 123445, name: "Dove Conditioner", price: 34, quantity: 1 }],
+  total: 34,
 };
 
 // Define the reducer function to handle actions
@@ -94,12 +93,12 @@ function ShoppingCart() {
   return (
     <div className=''>
       <h1>Shopping Cart</h1>
-      <ul>
+      <ul className=''>
         {cart.items.map((item) => (
-          <li key={item.id}>
+          <li key={item.id} className='flex gap-3'>
             {item.name} - Quantity: {item.quantity} - ${item.price} each
-            <button onClick={() => addItemToCart(item)} className=''>Add</button>
-            <button onClick={() => removeItemFromCart(item)}>Remove</button>
+            <button onClick={() => addItemToCart(item)} className='bg-red-400 px-3 py-1 rounded-md'>Add</button>
+            <button onClick={() => removeItemFromCart(item)} className='bg-red-400 px-3 py-1 rounded-md'>Remove</button>
           </li>
         ))}
       </ul>
